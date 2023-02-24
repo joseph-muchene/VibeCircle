@@ -108,9 +108,22 @@ export const getUserById = async () => {
   }
 };
 
-xports.followUser = async (req, res) => {
+// get user by Id
+export const getAnyUserById = async () => {
+  try {
+    const user = await User.findById({ _id: req.params.userId }).select(
+      "-password"
+    );
+    user.password = undefined;
+    return res.status(200).json(user);
+  } catch (error) {
+    return res.status(500).json("server error");
+  }
+};
+
+export const followUser = async (req, res) => {
   const userId = req.params.userId;
-  const currentUser = req.user.userId;
+  const currentUser = req.user._id;
 
   const user = await User.findById(userId);
   const current = await User.findById(currentUser);
@@ -137,9 +150,9 @@ xports.followUser = async (req, res) => {
   }
 };
 
-exports.unfollowUser = async (req, res) => {
+export const unfollowUser = async (req, res) => {
   const userId = req.params.userId;
-  const currentUser = req.user.userId;
+  const currentUser = req.user._id;
 
   const user = await User.findById(userId);
   const current = await User.findById(currentUser);

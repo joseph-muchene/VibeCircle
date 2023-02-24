@@ -6,7 +6,7 @@ import cors from "cors";
 import morgan from "morgan";
 const app = express();
 
-const DbString = "mongodb://localhost/VibeCircle";
+const DbString = process.env.DBString;
 
 // middlewares
 app.use(cors());

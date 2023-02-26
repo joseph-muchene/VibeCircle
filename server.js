@@ -18,6 +18,10 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 
+app.get("*", (req, res) => {
+  res.json("Welcome to VibeCircle api");
+});
+
 // routes
 app.use("/api/v1", postRoutes);
 app.use("/api/v1", authRoutes);

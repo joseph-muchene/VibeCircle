@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 export const createUser = async (req, res) => {
   // get the user data from the request body
   const { username, email, password } = req.body;
+
   //   check if the fiels are empty
   try {
     if (!username === "" || !email === "" || !password === "") {

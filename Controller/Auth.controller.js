@@ -10,17 +10,15 @@ async function LoginUser(req, res) {
     // if the user exists compare the password to the password in the database
     // if there is a match, create a token and send it as payload
 
-    const email = req.body;
-    const password = req.body;
+    const email = req.body.email;
+    const password = req.body.password;
 
     const user = await User.findOne({ email });
 
     if (!user) return res.status(404).json("user was not found");
-
     const userPassword = user.password;
-
     const comparePassword = await bcryptJs.compareSync(password, userPassword);
-
+    console.log(comparePassword);
     if (comparePassword) {
       const payload = {
         name: user.name,
@@ -42,9 +40,11 @@ async function LoginUser(req, res) {
           }
         }
       );
+    } else {
+      return res.status(403).json("invalid credentials");
     }
   } catch (err) {
-    return res.status(500).json("server error");
+    return res.status(500).json({ "server error": err.message });
   }
 }
 

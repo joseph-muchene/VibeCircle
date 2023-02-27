@@ -37,11 +37,10 @@ export const updateUser = async (req, res) => {
     const userId = req.user._id;
     const paramId = req.params.userId;
 
-    if (userId.toString() !== paramId)
-      return res.status(403).json("Not authorized");
+    if (userId !== paramId) return res.status(403).json("Not authorized");
 
     User.findByIdAndUpdate(
-      { id: userId },
+      { _id: userId },
       { $set: req.body },
       { new: true },
       (err, user) => {
@@ -65,7 +64,9 @@ export const DeleteUser = async (req, res) => {
     return res.status(403).json("Not authorized");
 
   try {
-    const removedUser = await User.findByIdAndRemove({ id: userId });
+    const removedUser = await User.findByIdAndRemove({ _id: userId });
+
+    if (removedUser === null) return res.status(404).json("user was not found");
 
     return res.status(200).json(removedUser);
   } catch (error) {
@@ -74,13 +75,13 @@ export const DeleteUser = async (req, res) => {
 };
 
 // send verified user
-export const VerifiedUser = async () => {
+export const VerifiedUser = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._id });
     user.password = undefined;
     return res.status(200).json(user);
   } catch (error) {
-    return res.status(500).json("server error");
+    return res.status(500).json(error);
   }
 };
 
@@ -99,9 +100,9 @@ export const findAllUsers = (req, res) => {
 };
 
 // get user by Id
-export const getUserById = async () => {
+export const getUserById = async (req, res) => {
   try {
-    const user = await User.findById({ _id: req.user.id }).select("-password");
+    const user = await User.findById({ _id: req.user._id }).select("-password");
     user.password = undefined;
     return res.status(200).json(user);
   } catch (error) {
@@ -110,7 +111,7 @@ export const getUserById = async () => {
 };
 
 // get user by Id
-export const getAnyUserById = async () => {
+export const getAnyUserById = async (req, res) => {
   try {
     const user = await User.findById({ _id: req.params.userId }).select(
       "-password"

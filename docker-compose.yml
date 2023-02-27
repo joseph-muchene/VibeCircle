@@ -4,6 +4,8 @@ services:
   mongo_db:
     container_name: db_container
     image: mongo:latest
+    ports:
+      - 27017:27017
     restart: always
     volumes:
       - mongo_db:/data/db
@@ -12,6 +14,9 @@ services:
     build: .
     ports:
       - 4000:8000
+
+    volumes:
+      - .:/app
 
     environment:
       DBString: mongodb://mongo_db:27017

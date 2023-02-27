@@ -4,7 +4,9 @@ import crypto from "crypto";
 // create a post
 export const createPost = async (req, res) => {
   try {
-    const newPost = new Post(req.body);
+    const userId = req.user._id;
+
+    const newPost = new Post({ ...req.body, userId });
 
     const savedPost = await newPost.save();
 
@@ -39,9 +41,11 @@ export const UpdatePost = async (req, res) => {
   try {
     const postId = req.params.postId;
     const verifiedUser = req.user._id;
-
-    if (verifiedUser.toString() !== postId)
+    const post = await Post.findById(postId);
+    if (verifiedUser !== post.userId.toString()) {
       return res.status(403).json("Not authorized");
+    }
+
     Post.findByIdAndUpdate(
       postId,
       { $set: req.body },
@@ -63,34 +67,26 @@ export const readPost = async (req, res) => {
 };
 // like post
 export const LikePost = async (req, res) => {
-  try {
-    // get post
-    const post = await Post.findById(req.params.postId);
+  const postId = req.params.postId;
+  const post = await Post.findById(postId);
 
-    // check if the post is already liked unlike
-
-    if (post.likes.indexOf(req.user._id) !== -1) {
-      post.likes.filter((like) => like !== req.user._id);
-    }
-    // add a like
-
-    post.likes.map((like) => [...like, req.user._id]);
-
-    // update the db
-    Post.findByIdAndUpdate(
-      post._id,
-      { ...post },
-      { new: true },
-      (err, data) => {
-        if (err) {
-          return res.status(400).json("could not update");
-        } else {
-          return res.status(200).json(data);
-        }
-      }
-    );
-  } catch (error) {
-    return res.status(500).json("server error");
+  // check if the post is liked
+  if (!post.likes.includes(req.user._id)) {
+    await post.updateOne({ $push: { likes: req.user._id } });
+    const likePost = await Post.find();
+    res.status(200).json({
+      msg: "like added",
+      postId,
+      result: likePost,
+    });
+  } else {
+    await post.updateOne({ $pull: { likes: req.user._id } });
+    const likePost = await Post.find();
+    res.status(200).json({
+      msg: "disliked",
+      postId,
+      result: likePost,
+    });
   }
 };
 // comment on a post
@@ -99,13 +95,10 @@ export const CommentPost = async (req, res) => {
     let post;
     post = await Post.findById({ _id: req.params.postId });
     const { text } = req.body;
-    post.comments.map((comment) => [
-      ...comment,
-      {
-        commentId: crypto.randomBytes(16).toString("hex"),
-        text,
-      },
-    ]);
+    post.comments.push({
+      commentId: crypto.randomBytes(16).toString("hex"),
+      text,
+    });
 
     // update the db
     Post.findByIdAndUpdate(
@@ -130,11 +123,15 @@ export const DeleteComment = async (req, res) => {
     const commentId = req.body.commentId;
     const userId = req.user._id;
 
-    const post = await Post.findById({ _id: req.params.postId });
+    let post = await Post.findById({ _id: req.params.postId });
 
     if (post.userId.toString() !== userId.toString())
       return res.status(403).json("Not authorized");
-    post.comments.filter((comment) => comment.commenterId !== commentId);
+    let x = post.comments.filter(
+      (comment) => comment._id.toString() !== commentId
+    );
+
+    post.comments = x;
 
     // update the db
     Post.findByIdAndUpdate(
@@ -162,7 +159,7 @@ export const findAllPosts = async (req, res) => {
 
 // fetch all user post
 export const findUserPost = async (req, res) => {
-  const userPosts = await Post.find({ userId: req.user.id });
+  const userPosts = await Post.find({ userId: req.user._id });
 
   return res.status(200).json(userPosts);
 };
